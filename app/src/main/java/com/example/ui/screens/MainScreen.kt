@@ -10,8 +10,13 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.res.painterResource
+import com.example.R
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -43,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import com.example.data.local.Flashcard
 import com.example.data.local.StudyReminder
 import com.example.data.local.StudySession
@@ -63,6 +69,8 @@ enum class AppTab(val title: String, val iconSelected: androidx.compose.ui.graph
 fun MainScreen(viewModel: StudyViewModel) {
     val context = LocalContext.current
     var currentTab by remember { mutableStateOf(AppTab.DASHBOARD) }
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
     
     // Dialog state controllers
     var showAddSessionDialog by remember { mutableStateOf(false) }
@@ -94,73 +102,228 @@ fun MainScreen(viewModel: StudyViewModel) {
         )
     )
 
-    Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        bottomBar = {
-            NavigationBar(
-                containerColor = Color(0xFFF3EDF7),
-                tonalElevation = 0.dp,
-                modifier = Modifier
-                    .navigationBarsPadding()
-                    .drawBehind {
-                        drawLine(
-                            color = Color(0xFFCAC4D0),
-                            start = androidx.compose.ui.geometry.Offset(0f, 0f),
-                            end = androidx.compose.ui.geometry.Offset(size.width, 0f),
-                            strokeWidth = 1.dp.toPx()
-                        )
-                    }
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(
+                drawerContainerColor = Color(0xFFFDF8FF),
+                modifier = Modifier.width(310.dp)
             ) {
-                AppTab.values().forEach { tab ->
-                    NavigationBarItem(
-                        selected = currentTab == tab,
-                        onClick = { currentTab = tab },
-                        icon = {
-                            Icon(
-                                imageVector = if (currentTab == tab) tab.iconSelected else tab.iconUnselected,
-                                contentDescription = tab.title,
-                                modifier = Modifier.size(24.dp)
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(24.dp)
+                ) {
+                    // Drawer Header with Companion PNG Image and medical status
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 24.dp, top = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape),
+                            color = Color(0xFFEADDFF),
+                            shadowElevation = 4.dp
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.study_companion_icon_1780075626828),
+                                contentDescription = "Companion Header Logo",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(4.dp)
+                                    .clip(CircleShape)
                             )
-                        },
-                        label = { Text(tab.title, fontWeight = FontWeight.Bold, fontSize = 10.sp) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color(0xFF1D192B),
-                            unselectedIconColor = Color(0xFF1D192B).copy(alpha = 0.6f),
-                            selectedTextColor = Color(0xFF1D192B),
-                            unselectedTextColor = Color(0xFF1D192B).copy(alpha = 0.6f),
-                            indicatorColor = Color(0xFFE8DEF8)
-                        )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = "Study Companion",
+                                fontSize = 19.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF21005D),
+                                fontFamily = FontFamily.Serif
+                            )
+                            Text(
+                                text = "MD/MS & NEET SS Portal",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF6750A4)
+                            )
+                            Text(
+                                text = "STATUS: Chief Resident 🩺",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1B5E20),
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(color = Color(0xFFCAC4D0).copy(alpha = 0.5f), thickness = 1.dp)
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "CLINICAL NAVIGATION",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF49454F),
+                        letterSpacing = 1.5.sp,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                     )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Drawer Items
+                    AppTab.values().forEach { tab ->
+                        NavigationDrawerItem(
+                            label = { 
+                                Text(
+                                    tab.title, 
+                                    fontWeight = FontWeight.Bold, 
+                                    fontSize = 14.sp
+                                ) 
+                            },
+                            selected = currentTab == tab,
+                            onClick = {
+                                currentTab = tab
+                                scope.launch { drawerState.close() }
+                            },
+                            icon = {
+                                Icon(
+                                    imageVector = if (currentTab == tab) tab.iconSelected else tab.iconUnselected,
+                                    contentDescription = tab.title,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            },
+                            colors = NavigationDrawerItemDefaults.colors(
+                                selectedContainerColor = Color(0xFFE8DEF8),
+                                unselectedContainerColor = Color.Transparent,
+                                selectedIconColor = Color(0xFF1D192B),
+                                unselectedIconColor = Color(0xFF1D192B).copy(alpha = 0.6f),
+                                selectedTextColor = Color(0xFF1D192B),
+                                unselectedTextColor = Color(0xFF1D192B).copy(alpha = 0.6f)
+                            ),
+                            shape = RoundedCornerShape(100)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    // Inspiration Note inside Drawer Footer
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFFF3EDF7), RoundedCornerShape(16.dp))
+                            .padding(16.dp)
+                    ) {
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Filled.MenuBook,
+                                    contentDescription = "Clinician tip",
+                                    tint = Color(0xFF6750A4),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "CLINICAL TIP",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF6750A4)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Rapid active recall (swiping flashcards) is the best way to master Harrison's content for board exams. Do 10 minutes daily!",
+                                fontSize = 11.sp,
+                                color = Color(0xFF49454F),
+                                lineHeight = 16.sp
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
         }
-    ) { innerPadding ->
-        Box(
+    ) {
+        Scaffold(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .background(Color(0xFFFDF8FF)) // Unified Artistic Flair Canvas Background
-        ) {
-            Crossfade(targetState = currentTab, label = "tabSearch") { tab ->
-                when (tab) {
-                    AppTab.DASHBOARD -> DashboardScreen(
-                        viewModel = viewModel,
-                        onAddSessionClick = { showAddSessionDialog = true },
-                        onNavigateToTab = { currentTab = it }
-                    )
-                    AppTab.POMODORO -> PomodoroScreen(viewModel = viewModel)
-                    AppTab.FLASHCARDS -> FlashcardsScreen(
-                        viewModel = viewModel,
-                        onAddCardClick = { showAddCardDialog = true }
-                    )
-                    AppTab.REMINDERS -> RemindersScreen(
-                        viewModel = viewModel,
-                        onAddReminderClick = { showAddReminderDialog = true }
-                    )
+                .background(MaterialTheme.colorScheme.background),
+            bottomBar = {
+                NavigationBar(
+                    containerColor = Color(0xFFF3EDF7),
+                    tonalElevation = 0.dp,
+                    modifier = Modifier
+                        .navigationBarsPadding()
+                        .drawBehind {
+                            drawLine(
+                                color = Color(0xFFCAC4D0),
+                                start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                                end = androidx.compose.ui.geometry.Offset(size.width, 0f),
+                                strokeWidth = 1.dp.toPx()
+                            )
+                        }
+                ) {
+                    AppTab.values().forEach { tab ->
+                        NavigationBarItem(
+                            selected = currentTab == tab,
+                            onClick = { currentTab = tab },
+                            icon = {
+                                Icon(
+                                    imageVector = if (currentTab == tab) tab.iconSelected else tab.iconUnselected,
+                                    contentDescription = tab.title,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            },
+                            label = { Text(tab.title, fontWeight = FontWeight.Bold, fontSize = 10.sp) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = Color(0xFF1D192B),
+                                unselectedIconColor = Color(0xFF1D192B).copy(alpha = 0.6f),
+                                selectedTextColor = Color(0xFF1D192B),
+                                unselectedTextColor = Color(0xFF1D192B).copy(alpha = 0.6f),
+                                indicatorColor = Color(0xFFE8DEF8)
+                            )
+                        )
+                    }
                 }
             }
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .background(Color(0xFFFDF8FF)) // Unified Artistic Flair Canvas Background
+            ) {
+                Crossfade(targetState = currentTab, label = "tabSearch") { tab ->
+                    when (tab) {
+                        AppTab.DASHBOARD -> DashboardScreen(
+                            viewModel = viewModel,
+                            onAddSessionClick = { showAddSessionDialog = true },
+                            onNavigateToTab = { currentTab = it },
+                            onOpenDrawer = { scope.launch { drawerState.open() } }
+                        )
+                        AppTab.POMODORO -> PomodoroScreen(
+                            viewModel = viewModel,
+                            onOpenDrawer = { scope.launch { drawerState.open() } }
+                        )
+                        AppTab.FLASHCARDS -> FlashcardsScreen(
+                            viewModel = viewModel,
+                            onAddCardClick = { showAddCardDialog = true },
+                            onOpenDrawer = { scope.launch { drawerState.open() } }
+                        )
+                        AppTab.REMINDERS -> RemindersScreen(
+                            viewModel = viewModel,
+                            onAddReminderClick = { showAddReminderDialog = true },
+                            onOpenDrawer = { scope.launch { drawerState.open() } }
+                        )
+                    }
+                }
 
             // Dialogs
             if (showAddSessionDialog) {
@@ -196,6 +359,7 @@ fun MainScreen(viewModel: StudyViewModel) {
         }
     }
 }
+}
 
 // ==========================================
 // 1. DASHBOARD SCREEN & SESSION LOGS
@@ -204,7 +368,8 @@ fun MainScreen(viewModel: StudyViewModel) {
 fun DashboardScreen(
     viewModel: StudyViewModel,
     onAddSessionClick: () -> Unit,
-    onNavigateToTab: (AppTab) -> Unit
+    onNavigateToTab: (AppTab) -> Unit,
+    onOpenDrawer: () -> Unit
 ) {
     val sessions by viewModel.studySessions.collectAsStateWithLifecycle()
     val flashcards by viewModel.flashcards.collectAsStateWithLifecycle()
@@ -334,14 +499,17 @@ fun DashboardScreen(
                                 color = Color(0xFF6750A4),
                                 style = Stroke(width = 2.dp.toPx())
                             )
-                        },
+                        }
+                        .clickable { onOpenDrawer() },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Person,
-                        contentDescription = "User avatar",
-                        tint = Color(0xFF21005D),
-                        modifier = Modifier.size(24.dp)
+                    Image(
+                        painter = painterResource(id = R.drawable.study_companion_icon_1780075626828),
+                        contentDescription = "User avatar logo",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(2.dp)
+                            .clip(CircleShape)
                     )
                 }
             }
@@ -1086,7 +1254,7 @@ fun SessionCard(session: StudySession, onDelete: () -> Unit) {
 // 2. POMODORO TIMER SCREEN (FOCUS CONTROL)
 // ==========================================
 @Composable
-fun PomodoroScreen(viewModel: StudyViewModel) {
+fun PomodoroScreen(viewModel: StudyViewModel, onOpenDrawer: () -> Unit) {
     val currentMode = viewModel.pomodoroMode
     val secondsRemaining = viewModel.timerSecondsRemaining
     val totalSeconds = viewModel.timerTotalSeconds
@@ -1158,14 +1326,17 @@ fun PomodoroScreen(viewModel: StudyViewModel) {
                                 color = Color(0xFF6750A4),
                                 style = Stroke(width = 2.dp.toPx())
                             )
-                        },
+                        }
+                        .clickable { onOpenDrawer() },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Timer,
-                        contentDescription = "Focus icon",
-                        tint = Color(0xFF21005D),
-                        modifier = Modifier.size(24.dp)
+                    Image(
+                        painter = painterResource(id = R.drawable.study_companion_icon_1780075626828),
+                        contentDescription = "User avatar logo",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(2.dp)
+                            .clip(CircleShape)
                     )
                 }
             }
@@ -1201,16 +1372,6 @@ fun PomodoroScreen(viewModel: StudyViewModel) {
                         radius = radius,
                         center = centerOffset,
                         style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round)
-                    )
-                    // Progress arc (mustard gold accent)
-                    drawArc(
-                        color = Color(0xFFFFE082),
-                        startAngle = -90f,
-                        sweepAngle = 360f * progress,
-                        useCenter = false,
-                        style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round),
-                        size = androidx.compose.ui.geometry.Size(radius * 2, radius * 2),
-                        topLeft = androidx.compose.ui.geometry.Offset(size.width / 2 - radius, size.height / 2 - radius)
                     )
                 },
             contentAlignment = Alignment.Center
@@ -1389,7 +1550,7 @@ fun PomodoroScreen(viewModel: StudyViewModel) {
 // 3. FLASHCARDS SCREEN & ANIMATED REVIEW
 // ==========================================
 @Composable
-fun FlashcardsScreen(viewModel: StudyViewModel, onAddCardClick: () -> Unit) {
+fun FlashcardsScreen(viewModel: StudyViewModel, onAddCardClick: () -> Unit, onOpenDrawer: () -> Unit) {
     val context = LocalContext.current
     val flashcards by viewModel.flashcards.collectAsStateWithLifecycle()
     val distinctDecks by viewModel.distinctDecks.collectAsStateWithLifecycle()
@@ -1451,14 +1612,17 @@ fun FlashcardsScreen(viewModel: StudyViewModel, onAddCardClick: () -> Unit) {
                                     color = Color(0xFF6750A4),
                                     style = Stroke(width = 2.dp.toPx())
                                 )
-                            },
+                            }
+                            .clickable { onOpenDrawer() },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.Style,
-                            contentDescription = "Flashcards Icon",
-                            tint = Color(0xFF21005D),
-                            modifier = Modifier.size(24.dp)
+                        Image(
+                            painter = painterResource(id = R.drawable.study_companion_icon_1780075626828),
+                            contentDescription = "User avatar logo",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(2.dp)
+                                .clip(CircleShape)
                         )
                     }
                 }
@@ -1715,7 +1879,35 @@ fun FlashcardsScreen(viewModel: StudyViewModel, onAddCardClick: () -> Unit) {
                                     color = Color(0xFF1D192B),
                                     lineHeight = 28.sp
                                 )
-                                Spacer(modifier = Modifier.height(24.dp))
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.horizontalScroll(rememberScrollState())
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .background(Color(0xFFE8DEF8), RoundedCornerShape(6.dp))
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text(text = activeCard.deckName.uppercase(Locale.ROOT), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF21005D))
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .background(Color(0xFFEADDFF), RoundedCornerShape(6.dp))
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text(text = "HIGH YIELD", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF21005D))
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .background(Color(0xFFFFF0C2), RoundedCornerShape(6.dp))
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text(text = "ACTIVE RECALL", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7A5C00))
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
                                 Text(
                                     text = "👉 Tap card to flip & reveal",
                                     fontSize = 11.sp,
@@ -1747,7 +1939,35 @@ fun FlashcardsScreen(viewModel: StudyViewModel, onAddCardClick: () -> Unit) {
                                     color = Color(0xFF5D4037),
                                     lineHeight = 28.sp
                                 )
-                                Spacer(modifier = Modifier.height(24.dp))
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.horizontalScroll(rememberScrollState())
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .background(Color(0xFF5D4037).copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text(text = activeCard.deckName.uppercase(Locale.ROOT), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF5D4037))
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .background(Color(0xFF8D6E63).copy(alpha = 0.2f), RoundedCornerShape(6.dp))
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text(text = "RATED", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF5D4037))
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .background(Color(0xFFC8E6C9), RoundedCornerShape(6.dp))
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text(text = "MEMORIZED", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1B5E20))
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
                                 Text(
                                     text = "Tap to view question again",
                                     fontSize = 11.sp,
@@ -1835,7 +2055,7 @@ fun FlashcardsScreen(viewModel: StudyViewModel, onAddCardClick: () -> Unit) {
 // 4. SPACED REMINDERS / ALARMS MANAGER SCREEN
 // ==========================================
 @Composable
-fun RemindersScreen(viewModel: StudyViewModel, onAddReminderClick: () -> Unit) {
+fun RemindersScreen(viewModel: StudyViewModel, onAddReminderClick: () -> Unit, onOpenDrawer: () -> Unit) {
     val reminders by viewModel.reminders.collectAsStateWithLifecycle()
 
     LazyColumn(
@@ -1891,14 +2111,17 @@ fun RemindersScreen(viewModel: StudyViewModel, onAddReminderClick: () -> Unit) {
                                 color = Color(0xFF6750A4),
                                 style = Stroke(width = 2.dp.toPx())
                             )
-                        },
+                        }
+                        .clickable { onOpenDrawer() },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.NotificationsActive,
-                        contentDescription = "Reminders Icon",
-                        tint = Color(0xFF21005D),
-                        modifier = Modifier.size(24.dp)
+                    Image(
+                        painter = painterResource(id = R.drawable.study_companion_icon_1780075626828),
+                        contentDescription = "User avatar logo",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(2.dp)
+                            .clip(CircleShape)
                     )
                 }
             }
@@ -2263,10 +2486,17 @@ fun AddFlashcardDialog(
                 )
 
                 // Quick Deck suggestions
-                val deckSuggestions = if (availableDecks.isNotEmpty()) availableDecks.take(4) else listOf("Internal Med", "Cardiology", "Neurology", "Clinical MCQ")
+                val defaultPresets = listOf(
+                    "Internal Med", "Cardiology", "Neurology", "Anatomy", 
+                    "Pathology", "Pharmacology", "Pediatrics", "Surgery", 
+                    "Clinical MCQ", "Microbiology"
+                )
+                val deckSuggestions = (availableDecks + defaultPresets).distinct().take(12)
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
                 ) {
                     deckSuggestions.forEach { existing ->
                         Box(

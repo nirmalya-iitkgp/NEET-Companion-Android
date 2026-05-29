@@ -33,7 +33,12 @@ Built completely with **Kotlin, Jetpack Compose, and Room Database (SQLite)** fo
 - **Interactive 3D Flip Cards**: Click individual study cards to trigger a realistic, gratifying Y-axis rotating flip animation that swaps between clinical questions and correct diagnostic criteria.
 - **Score Logging**: Rate retrieval success by tapping "Wrong, study more" vs "Got it, simple!" to increment review counts.
 
-### 6. Spaced Reminders & Alarms (Alarms)
+### 6. Clinical Core Navigation Drawer (App Drawer)
+- **High-Fidelity Branding**: Beautiful custom circular PNG companion header logo mapped onto a soft purple layered elevated surface with dynamic drop-shadows.
+- **Unified Navigation Hub**: Access quick navigation links matching bottom bar configurations, plus an active resident clinic level status indicator (`STATUS: Chief Resident 🩺`).
+- **Footer Clinical Tips**: Integrated dynamic medical review tip drawer container reminding doctors of spaced recall benefits.
+
+### 7. Spaced Reminders & Alarms (Alarms)
 - **Spaced Repetition Integration**: Set reminders based on review intervals (custom quick presets of 1 min, 10 mins, or days).
 - **Exact System Alarms**: Schedules precise OS alerts utilizing Android's `AlarmManager` and custom `ReminderReceiver` broadcast configurations.
 - **Local Push Notifications**: Dispatches push alerts with clinical motivational text prompts even when the app is completely closed.
@@ -42,7 +47,8 @@ Built completely with **Kotlin, Jetpack Compose, and Room Database (SQLite)** fo
 
 ## 💡 Styling Choices & Creative Design
 - **Inspirational Sunset/Indigo Theme**: Replaces generic, dry gray backgrounds with layered glass-morphic cards, linear gradient backgrounds, and golden color palettes.
-- **Material Design 3**: Complete adherence to accessibility guidelines including Material ripples, minimum 48dp tappable fields, and adaptive spacing models.
+- **Material Design 3**: Complete adherence to accessibility guidelines including Material ripples, minimum 48dp tappable fields including sliding App Drawer, and adaptive spacing models.
+- **Unified Avatar Brand**: The premium companion PNG image is unified across all screens as a custom-styled, interactive avatar button that opens the Navigation Drawer.
 
 ---
 
