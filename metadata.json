@@ -1,0 +1,6 @@
+{
+  "name": "Medical Study Companion",
+  "description": "Log residency study blocks by specialty, track clinical habits (duration, frequency, and consistency), define custom session goals, and stay inspired with clinical quotes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
