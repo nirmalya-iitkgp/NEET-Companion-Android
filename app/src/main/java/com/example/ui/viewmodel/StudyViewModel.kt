@@ -280,14 +280,18 @@ class StudyViewModel(private val repository: StudyRepository) : ViewModel() {
                 )
             }
             Log.d("StudyViewModel", "Successfully scheduled alarm for $subject at millis $triggerTimeMillis")
-        } catch (e: SecurityException) {
-            // Safe fallback for Android 14+ if permission exact alarms isn't enabled
-            alarmManager.set(
-                AlarmManager.RTC_WAKEUP,
-                triggerTimeMillis,
-                pendingIntent
-            )
-            Log.w("StudyViewModel", "SecurityException scheduling exact alarm, fallback to standard: ${e.message}")
+        } catch (e: Exception) {
+            // Safe fallback for Android 12+ or custom vendor policies if permission exact alarms isn't enabled
+            try {
+                alarmManager.set(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTimeMillis,
+                    pendingIntent
+                )
+                Log.w("StudyViewModel", "Exception scheduling exact alarm, fallback to standard: ${e.message}")
+            } catch (fallbackEx: Exception) {
+                Log.e("StudyViewModel", "Failed completely to schedule alarm: ${fallbackEx.message}")
+            }
         }
     }
 

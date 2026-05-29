@@ -25,7 +25,7 @@ abstract class StudyDatabase : RoomDatabase() {
                     StudyDatabase::class.java,
                     "study_companion_db"
                 )
-                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigration(true)
                 .build()
                 INSTANCE = instance
                 instance

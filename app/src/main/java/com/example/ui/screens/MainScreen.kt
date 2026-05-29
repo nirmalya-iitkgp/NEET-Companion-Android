@@ -1649,9 +1649,19 @@ fun FlashcardsScreen(viewModel: StudyViewModel, onAddCardClick: () -> Unit) {
                     )
                 }
             } else {
-                val activeCard = deckFlashcards[currentCardIndex]
-
-                // Flip animation components using Y-axis rotation
+                val activeCard = deckFlashcards.getOrNull(currentCardIndex)
+                if (activeCard == null) {
+                    LaunchedEffect(deckFlashcards.size) {
+                        currentCardIndex = (deckFlashcards.size - 1).coerceAtLeast(0)
+                    }
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color(0xFF6750A4))
+                    }
+                } else {
+                    // Flip animation components using Y-axis rotation
                 val rotationY by animateFloatAsState(
                     targetValue = if (isCardFlipped) 180f else 0f,
                     animationSpec = tween(durationMillis = 400),
@@ -1813,6 +1823,7 @@ fun FlashcardsScreen(viewModel: StudyViewModel, onAddCardClick: () -> Unit) {
                             Text("Got it, easy!", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
+                }
                 }
             }
             Spacer(modifier = Modifier.height(1.dp))
